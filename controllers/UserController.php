@@ -9,6 +9,7 @@ use app\models\ContactForm;
 use app\forms\TransferForm;
 use app\forms\SignupForm;
 use app\forms\ViewForm;
+use app\forms\AccountForm;
 use app\forms\CreateaccountForm;
 use app\components\Mandrill;
 use app\models\Account;
@@ -38,7 +39,7 @@ class UserController extends \yii\web\Controller
             'verbs' => [
                 'class' => VerbFilter::className(),
                 'actions' => [
-                    'logout' => ['post'],
+                    'logout' => ['get'],
                 ],
             ],
         ];
@@ -111,18 +112,18 @@ class UserController extends \yii\web\Controller
                     
                 Yii::$app->getSession()->setFlash('success', 'Register Successfully.');
 
-                Yii::$app->mailer->compose('email')
-                    ->setFrom('assignment1200@gmail.com')
-                    ->setTo($model->email)
-                    ->setSubject('WELCOME')
-                    ->send();
+                // Yii::$app->mailer->compose('email')
+                //     ->setFrom('assignment1200@gmail.com')
+                //     ->setTo($model->email)
+                //     ->setSubject('WELCOME')
+                //     ->send();
 
                 $db->commit();
                 return $this->redirect('signup');
 
             }catch(\Exception $e){
                 $db->rollback();
-                echo $e->getMessage();    
+                Yii::$app->getSession()->setFlash('danger', $e->getMessage());
             }
         }
         return $this->render('signup', ['model' => $model]);
@@ -156,13 +157,6 @@ class UserController extends \yii\web\Controller
                 $model->transferAccount();
                 Yii::$app->getSession()->setFlash('success', 'Amount transfered successfully.');
 
-                // SMS Function
-                // $nexmo_sms = new NexmoMessage('dd8a33e0', 'M7Y7VNY4XfMH8K8f');
-
-                // $info = $nexmo_sms->sendText( '+60176049207', '60176049207', 'This transaction has been made.' );
-                // echo $nexmo_sms->displayOverview($info);
-
-
                 $db->commit();
 
                 //SMS Function
@@ -173,16 +167,17 @@ class UserController extends \yii\web\Controller
                             ->send();
 
                 //Email Function
-                Yii::$app->mailer->compose('transactionemail')
-                    ->setFrom('assignment1200@gmail.com')
-                    ->setTo($user->email)
-                    ->setSubject('TRANSACTION')
-                    ->send();
+                // Yii::$app->mailer->compose('transactionemail')
+                //     ->setFrom('assignment1200@gmail.com')
+                //     ->setTo($user->email)
+                //     ->setSubject('TRANSACTION')
+                //     ->send();
                 return $this->redirect('transfer');
 
             }catch(\Exception $e){
                 $db->rollback();
-                return $e;
+                
+                Yii::$app->getSession()->setFlash('danger', $e->getMessage());
             }
         }
         return $this->render('transfer', ['model' => $model, 'listData' => $listData]);
@@ -285,5 +280,93 @@ class UserController extends \yii\web\Controller
 
         }
         return $this->render('updateprofile', ['model' => $model]);
+    }
+
+    public function actionForgetpassword()
+    {
+        $model = new SignupForm;
+        $db = Yii::$app->db->beginTransaction();
+
+        if($model->load(Yii::$app->request->post())){
+            try{
+                $code = $model->requestCode($model->email);
+
+                Yii::$app->mailer->compose('securitycodeemail', ['code' => $code])
+                        ->setFrom('assignment1200@gmail.com')
+                        ->setTo($model->email)
+                        ->setSubject('Verfication Code')
+                        ->send();
+
+                Yii::$app->getSession()->setFlash('success', 'Verification code has been sent to your email, please check your email.');
+
+                $db->commit();
+                
+                return $this->redirect('nextforgetpassword');
+            }catch(\Exception $e){
+                $db->rollback();
+                Yii::$app->getSession()->setFlash('danger', $e->getMessage());
+            }
+        }
+
+        return $this->render('forgetpassword', ['model' => $model]);
+    }
+
+    public function actionNextforgetpassword()
+    {
+        $model = new SignupForm();
+        $db = Yii::$app->db->beginTransaction();
+
+        if($model->load(Yii::$app->request->post())){
+            try{
+                $model->newPassword($model->security_code);
+
+                Yii::$app->getSession()->setFlash('success', 'Your password has been resetted.');
+
+                $db->commit();
+
+                return $this->redirect('login');
+
+            }catch(\Exception $e){
+                $db->rollback();
+                Yii::$app->getSession()->setFlash('danger', $e->getMessage());
+            }
+        }
+        return $this->render('nextforgetpassword', ['model' => $model]);
+    }
+
+    public function actionActivateaccount()
+    {
+        if(Yii::$app->user->identity->position === 'admin'){
+
+            $model = new AccountForm;
+            $user = User::find()->where(['activation' => 'Deactivate'])->all();
+            $listData = ArrayHelper::map($user, 'id', 'name');
+            $db = Yii::$app->db->beginTransaction();
+
+            $model->getBalance();
+
+            if($model->load(Yii::$app->request->post())){
+                try{
+                    $model->activateAccount();
+                    $db->commit();
+
+                    Yii::$app->getSession()->setFlash('success', 'This user account has been activated.');
+
+                    return $this->redirect('activateaccount');
+                }catch(\Exception $e){
+                    $db->rollback();
+                    Yii::$app->getSession()->setFlash('danger', $e->getMessage());
+                }            
+            }
+
+            return $this->render('activateaccount', [
+                'model' =>$model,
+                'listData' => $listData
+            ]);
+        }else {
+            Yii::$app->getSession()->setFlash('danger', 'You do not require the permission to access this page.');
+
+            return $this->goHome();
+        }
     }
 }

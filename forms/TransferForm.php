@@ -16,7 +16,8 @@ class TransferForm extends Model
 	public $from_account_number;
     public $to_account_number;
     public $account_number;
-	public $amount;
+    public $amount;
+	public $balance;
     public $name;
     public $user_id;
     public $details;
@@ -28,10 +29,9 @@ class TransferForm extends Model
     {
         return [
             [['from_account_number', 'to_account_number', 'amount', 'name', 'details', 'bank_reference'], 'required'],
-            [['amount', 'after_balance'], 'double'],
+            [['amount', 'after_balance', 'balance'], 'number'],
             ['to_account_number', 'compare', 'compareAttribute' => 'from_account_number', 'operator' => '!='],
             [['amount'], 'number', 'min' => 0]
-            // ['to_account_number', 'unique', 'targetClass' => '\app\models\Account', 'message' => 'This account does not exist.'],
         ];
     }
 
@@ -40,7 +40,12 @@ class TransferForm extends Model
         $id = Yii::$app->user->identity->id;
         $out_transaction = new Transaction;
         $in_transaction = new Transaction;
-        $account = Account::findOne($id);
+        // $account = Account::findOne($id);
+        $account2 = Account::findOne(['account_number' => $this->from_account_number]);
+
+        if($account2->balance < $this->amount){
+            throw new \Exception("Account balance is insufficient");
+        }
 
         $out_transaction->user_id = $id;
         $out_transaction->from_account_number = $this->from_account_number;
@@ -51,12 +56,6 @@ class TransferForm extends Model
         $out_transaction->type = self::TYPE_OUT;
         $out_transaction->created_at = date('Y-m-d H:i:s');
         $out_transaction->updated_at = date('Y-m-d H:i:s');
-
-        // $name = $this->getRecipientName($out_transaction->to_account_number);
-
-        // if(!$this->name === $name){
-        //     throw new Exception('Recipient Name and Recipient Account Number does not match. Please enter correct Recipient Name or Recipient Account Number.');
-        // }
 
         $this->getAccountBalance($out_transaction->from_account_number, $out_transaction->after_balance);
 
@@ -74,9 +73,8 @@ class TransferForm extends Model
         $in_transaction->created_at = date('Y-m-d H:i:s');
         $in_transaction->updated_at = date('Y-m-d H:i:s');
 
-
         if(!$in_transaction->save()){
-            throw new \Exception(current($out_transaction->getFirstErrors()));
+                throw new \Exception(current($out_transaction->getFirstErrors()));
         }
 
         $this->getAccountBalance($out_transaction->to_account_number, $in_transaction->after_balance);
@@ -129,19 +127,4 @@ class TransferForm extends Model
             throw new Exception(current($account->getFirstErrors()));
         }
     }
-
-    // public function getRecipientName($to_account_number)
-    // {
-    //     $user = User::find()
-    //             ->select('name')
-    //             ->where(['to_account_number' => $to_account_number])
-    //             ->one();
-
-    //     return $user->name;
-    // }
-
-    // public function accountNameMatch()
-    // {
-    //     $id = $this->getToUserid(to_account_number)
-    // }
 }

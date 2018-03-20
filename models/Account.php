@@ -38,7 +38,7 @@ class Account extends \yii\db\ActiveRecord
         return [
             [['user_id'], 'required'],
             [['user_id'], 'integer'],
-            [['balance'], 'double'],
+            [['balance'], 'number'],
             [['created_at', 'updated_at'], 'safe'],
             [['type', 'account_number'], 'string', 'max' => 255],
             [['is_deleted'], 'number', 'max' => 1],

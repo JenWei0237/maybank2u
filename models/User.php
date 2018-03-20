@@ -52,7 +52,9 @@ class User extends \yii\db\ActiveRecord implements \yii\web\IdentityInterface
     {
         return [
             [['dob', 'created_at', 'updated_at'], 'safe'],
-            [['username', 'password', 'name', 'first_name', 'last_name', 'ic', 'gender', 'position', 'email', 'country_code', 'contact_number', 'address', 'postcode', 'city', 'state', 'country', 'remark'], 'string', 'max' => 255],
+            [['username', 'password', 'name', 'first_name', 'last_name', 'ic', 'gender', 'position', 'email', 'country_code', 'contact_number', 'address', 'postcode', 'city', 'state', 'country', 'remark', 'security_code'], 'string', 'max' => 255],
+            [['username'], 'required'],
+            [['email'], 'unique'],
             [['is_suspended', 'is_deleted'], 'number', 'max' => 1],
         ];
     }
@@ -83,6 +85,7 @@ class User extends \yii\db\ActiveRecord implements \yii\web\IdentityInterface
             'country' => 'Country',
             'is_suspended' => 'Is Suspended',
             'remark' => 'Remark',
+            'security_code' => 'Security Code',
             'created_at' => 'Created At',
             'updated_at' => 'Updated At',
             'is_deleted' => 'Is Deleted',

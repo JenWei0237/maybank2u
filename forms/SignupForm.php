@@ -9,7 +9,8 @@ use app\models\User;
 class SignUpForm extends Model
 {
 	public $username;
-	public $password;
+    public $password;
+	public $confirm_password;
     public $name;
 	public $first_name;
 	public $last_name;
@@ -25,13 +26,17 @@ class SignUpForm extends Model
     public $state;
     public $postcode;
     public $remark;
+    public $security_code;
+
 
 	public function rules()
     {
         return [
-            [['username', 'password', 'name', 'first_name', 'last_name', 'dob', 'ic', 'email', 'country_code', 'contact_number', 'gender'], 'safe'],
+            [['username', 'confirm_password', 'password', 'name', 'first_name', 'last_name', 'dob', 'ic', 'email', 'country_code', 'contact_number', 'gender'], 'required'],
             ['email', 'email'],
-            [['country', 'address', 'city', 'state', 'postcode'], 'safe'],
+            [['email'], 'unique'],
+            [['country', 'address', 'city', 'state', 'postcode', 'security_code'], 'safe'],
+            ['confirm_password', 'compare', 'compareAttribute' => 'password'],
         ];
     }
 
@@ -46,7 +51,8 @@ class SignUpForm extends Model
             $model->ic = $this->ic;
             $model->dob = $this->dob;
             $model->gender = $this->gender;
-            $model->position = 'user';        
+            $model->position = 'user';       
+            $model->activation = 'Deactivate';       
             $model->email = $this->email;
             $model->country_code = $this->country_code;
             $model->contact_number = $this->contact_number;
@@ -93,5 +99,46 @@ class SignUpForm extends Model
         }
     
         return $model;
+    }
+
+    public function getUserid()
+    {
+        throw new \Exception($this->username);
+        $user = User::find()
+                ->where(['username' => $this->username])
+                ->one();
+
+        if($user === null){
+            throw new \Exception($this->username);
+        }
+
+        return $user;
+    }
+
+    public function requestCode($email)
+    {
+        $model = User::findOne(['email' => $this->email]);
+
+        $code = rand(10000, 99999);
+
+        $model->security_code = $code;
+        $model->update(false, ['security_code']);
+
+        return $code;
+    }
+
+    public function newPassword($security_code)
+    {
+        $user = User::findOne(['security_code' => $this->security_code]);
+        if($user->security_code === $this->security_code){
+            $user->password = sha1($this->password);
+            $user->security_code = '';
+
+            $user->update(false, ['password']);
+            $user->update(false, ['security_code']);
+        }else {
+            throw new \Exception("The verification code does not match.");
+        }
+
     }
 }
