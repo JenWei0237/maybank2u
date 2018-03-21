@@ -35,6 +35,7 @@ class SignUpForm extends Model
             [['username', 'confirm_password', 'password', 'name', 'first_name', 'last_name', 'dob', 'ic', 'email', 'country_code', 'contact_number', 'gender'], 'required'],
             ['email', 'email'],
             [['email'], 'unique'],
+            [['dob'], 'default', 'value' => null],
             [['country', 'address', 'city', 'state', 'postcode', 'security_code'], 'safe'],
             ['confirm_password', 'compare', 'compareAttribute' => 'password'],
         ];
@@ -42,7 +43,8 @@ class SignUpForm extends Model
 
     public function signUp()
     {
-            $model = new User;
+        $model = new User;
+
             $model->username = $this->username;
             $model->password = sha1($this->password);
             $model->name = $this->name;
@@ -69,7 +71,6 @@ class SignUpForm extends Model
             if(!$model->save()){
                 throw new \Exception(current($model->getFirstErrors()));
             }
-        
             return $model;
     }
 

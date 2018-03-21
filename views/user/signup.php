@@ -35,7 +35,6 @@ $this->params['breadcrumbs'][] = $this->title;
       <div class="col-md-6">
         <?= $form->field($model, 'email')->textInput(['placeholder' => 'aaa@example.com', 'class' => 'form-control']) ?>
       </div>
-      <div class="row">
           <div class="col-md-12">
             <?= $form->field($model, 'dob')->
                 widget(DatePicker::className(), [
@@ -44,15 +43,16 @@ $this->params['breadcrumbs'][] = $this->title;
                   'clientOptions' => 
                   [
                       'showAnim' => 'drop',
-                      'yearRange' => '1900:2099',
+                      'maxDate' => 0,
+                      'yearRange' => '1850:2099',
                       'changeMonth' => true,
                       'changeYear' => true
                   ]
                   
-                ])->label('Date of Birth')
+                ])->textInput(['readonly' => true])->label('Date of Birth')
             ?>
           </div>
-      </div>
+        </div>
       <div class="col-md-2">
         <?= $form->field($model, 'country_code')->dropDownList(['+60' => '+60']) ?>
       </div>
