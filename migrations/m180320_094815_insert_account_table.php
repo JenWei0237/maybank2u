@@ -12,10 +12,12 @@ class m180320_094815_insert_account_table extends Migration
      */
     public function safeUp()
     {
-        'user_id' => 1,
-        'account_number' => '159357789',
-        'balance' => 10000000,
-        'type' => 'Saving Account'
+        $this->insert('account', array(
+            'user_id' => 1,
+            'account_number' => '159357789',
+            'balance' => 10000000,
+            'type' => 'Saving Account'
+        ));
     }
 
     /**
