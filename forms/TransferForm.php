@@ -124,7 +124,7 @@ class TransferForm extends Model
         $account->balance = $after_balance;
 
         if(!$account->update(false, ['balance'])){
-            throw new Exception(current($account->getFirstErrors()));
+            throw new \Exception(current($account->getFirstErrors()));
         }
     }
 }
