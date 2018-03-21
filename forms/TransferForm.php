@@ -31,7 +31,7 @@ class TransferForm extends Model
             [['from_account_number', 'to_account_number', 'amount', 'name', 'details', 'bank_reference'], 'required'],
             [['amount', 'after_balance', 'balance'], 'number'],
             ['to_account_number', 'compare', 'compareAttribute' => 'from_account_number', 'operator' => '!='],
-            [['amount'], 'number', 'min' => 0]
+            [['amount'], 'number', 'min' => 1]
         ];
     }
 
