@@ -54,7 +54,7 @@ class Transaction extends \yii\db\ActiveRecord
     {
         return [
             'id' => 'ID',
-            'user_id' => 'User ID',
+            'user_id' => 'Username',
             'from_account_number' => 'From Account Number',
             'to_account_number' => 'To Account Number',
             'details' => 'Details',

@@ -53,7 +53,7 @@ class Account extends \yii\db\ActiveRecord
     {
         return [
             'id' => 'ID',
-            'user_id' => 'User ID',
+            'user_id' => 'Username',
             'account_number' => 'Account Number',
             'balance' => 'Balance',
             'type' => 'Type',

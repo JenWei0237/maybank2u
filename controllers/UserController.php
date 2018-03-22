@@ -10,6 +10,8 @@ use app\forms\TransferForm;
 use app\forms\SignupForm;
 use app\forms\ViewForm;
 use app\forms\AccountForm;
+use app\forms\AccountSearchForm;
+use app\forms\TransactionSearchForm;
 use app\forms\CreateaccountForm;
 use app\components\Mandrill;
 use app\models\Account;
@@ -19,6 +21,7 @@ use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
 use yii\helpers\ArrayHelper;
 use yii\httpclient\Client;
+use yii\data\ActiveDataProvider;
 
 class UserController extends \yii\web\Controller
 {
@@ -362,6 +365,76 @@ class UserController extends \yii\web\Controller
             return $this->render('activateaccount', [
                 'model' =>$model,
                 'listData' => $listData
+            ]);
+        }else {
+            Yii::$app->getSession()->setFlash('danger', 'You do not require the permission to access this page.');
+
+            return $this->goHome();
+        }
+    }
+
+    public function actionChangepassword()
+    {
+        $model = new SignupForm();
+        $db = Yii::$app->db->beginTransaction();
+
+        if($model->load(Yii::$app->request->post())){
+            try{
+                $model->changePassword();
+                $db->commit();
+
+                Yii::$app->getSession()->setFlash('success', 'New password has been changed.');
+                return $this->redirect('changepassword');
+            }catch(\Exception $e){
+                $db->rollback();
+                Yii::$app->getSession()->setFlash('danger', $e->getMessage());
+            }
+        }
+
+        return $this->render('changepassword', ['model' => $model]);
+    }
+
+    public function actionViewaccountlist()
+    {
+        if(Yii::$app->user->identity->position === 'admin'){
+            $searchModel = new AccountSearchForm();
+            $dataProvider = $searchModel->accountSearch(Yii::$app->request->queryParams);
+
+            return $this->render('viewaccountlist', [
+                'dataProvider' => $dataProvider,
+                'searchModel' => $searchModel
+            ]);
+        }else {
+            Yii::$app->getSession()->setFlash('danger', 'You do not require the permission to access this page.');
+
+            return $this->goHome();
+        }
+    }
+
+    public function actionUserlist()
+    {
+        if(Yii::$app->user->identity->position === 'admin'){
+            $dataProvider = new ActiveDataProvider([
+                'query' => User::find()
+            ]);
+
+            return $this->render('userlist', ['dataProvider' => $dataProvider]);
+        }else {
+            Yii::$app->getSession()->setFlash('danger', 'You do not require the permission to access this page.');
+
+            return $this->goHome();
+        }
+    }
+
+    public function actionViewtransactionlist()
+    {
+        if(Yii::$app->user->identity->position === 'admin'){
+            $searchModel = new TransactionSearchForm();
+            $dataProvider = $searchModel->transactionSearch(Yii::$app->request->queryParams);
+
+            return $this->render('viewtransactionlist', [
+                'dataProvider' => $dataProvider,
+                'searchModel' => $searchModel
             ]);
         }else {
             Yii::$app->getSession()->setFlash('danger', 'You do not require the permission to access this page.');

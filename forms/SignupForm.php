@@ -10,7 +10,8 @@ class SignUpForm extends Model
 {
 	public $username;
     public $password;
-	public $confirm_password;
+    public $confirm_password;
+	public $confirm_new_password;
     public $name;
 	public $first_name;
 	public $last_name;
@@ -27,17 +28,20 @@ class SignUpForm extends Model
     public $postcode;
     public $remark;
     public $security_code;
+    public $old_password;
+    public $new_password;
 
 
 	public function rules()
     {
         return [
-            [['username', 'confirm_password', 'password', 'name', 'first_name', 'last_name', 'dob', 'ic', 'email', 'country_code', 'contact_number', 'gender'], 'required'],
+            [['username', 'confirm_password', 'confirm_new_password', 'password', 'old_password', 'new_password', 'name', 'first_name', 'last_name', 'dob', 'ic', 'email', 'country_code', 'contact_number', 'gender'], 'required'],
             ['email', 'email'],
             [['email'], 'unique'],
             [['dob'], 'default', 'value' => null],
             [['country', 'address', 'city', 'state', 'postcode', 'security_code'], 'safe'],
             ['confirm_password', 'compare', 'compareAttribute' => 'password'],
+            ['confirm_new_password', 'compare', 'compareAttribute' => 'new_password'],
         ];
     }
 
@@ -139,6 +143,18 @@ class SignUpForm extends Model
             $user->update(false, ['security_code']);
         }else {
             throw new \Exception("The verification code does not match.");
+        }
+    }
+
+    public function changePassword()
+    {
+        $user = User::findOne(Yii::$app->user->identity->id);
+
+        if(sha1($this->old_password) === $user->password){
+            $user->password = sha1($this->new_password);
+            $user->update(false, ['password']);
+        }else{
+            throw new \Exception("Incorrect old password.");
         }
 
     }
