@@ -360,37 +360,41 @@ class UserController extends \yii\web\Controller
 
     public function actionActivateaccount()
     {
-        if(Yii::$app->user->identity->position === 'admin'){
+        if(!Yii::$app->user->isGuest){
+            if(Yii::$app->user->identity->position === 'admin'){
 
-            $model = new AccountForm;
-            $user = User::find()->where(['activation' => 'Deactivate'])->all();
-            $listData = ArrayHelper::map($user, 'id', 'name');
-            $db = Yii::$app->db->beginTransaction();
+                $model = new AccountForm;
+                $user = User::find()->where(['activation' => 'Deactivate'])->all();
+                $listData = ArrayHelper::map($user, 'id', 'name');
+                $db = Yii::$app->db->beginTransaction();
 
-            $model->getBalance();
+                $model->getBalance();
 
-            if($model->load(Yii::$app->request->post())){
-                try{
-                    $model->activateAccount();
-                    $db->commit();
+                if($model->load(Yii::$app->request->post())){
+                    try{
+                        $model->activateAccount();
+                        $db->commit();
 
-                    Yii::$app->getSession()->setFlash('success', 'This user account has been activated.');
+                        Yii::$app->getSession()->setFlash('success', 'This user account has been activated.');
 
-                    return $this->redirect('activateaccount');
-                }catch(\Exception $e){
-                    $db->rollback();
-                    Yii::$app->getSession()->setFlash('danger', $e->getMessage());
-                }            
+                        return $this->redirect('activateaccount');
+                    }catch(\Exception $e){
+                        $db->rollback();
+                        Yii::$app->getSession()->setFlash('danger', $e->getMessage());
+                    }            
+                }
+
+                return $this->render('activateaccount', [
+                    'model' =>$model,
+                    'listData' => $listData
+                ]);
+            }else {
+                Yii::$app->getSession()->setFlash('danger', 'You do not require the permission to access this page.');
+
+                return $this->goHome();
             }
-
-            return $this->render('activateaccount', [
-                'model' =>$model,
-                'listData' => $listData
-            ]);
-        }else {
+        }else{
             Yii::$app->getSession()->setFlash('danger', 'You do not require the permission to access this page.');
-
-            return $this->goHome();
         }
     }
 
@@ -422,50 +426,62 @@ class UserController extends \yii\web\Controller
 
     public function actionViewaccountlist()
     {
-        if(Yii::$app->user->identity->position === 'admin'){
-            $searchModel = new AccountSearchForm();
-            $dataProvider = $searchModel->accountSearch(Yii::$app->request->queryParams);
+        if(!Yii::$app->user->isGuest){
+            if(Yii::$app->user->identity->position === 'admin'){
+                $searchModel = new AccountSearchForm();
+                $dataProvider = $searchModel->accountSearch(Yii::$app->request->queryParams);
 
-            return $this->render('viewaccountlist', [
-                'dataProvider' => $dataProvider,
-                'searchModel' => $searchModel
-            ]);
-        }else {
+                return $this->render('viewaccountlist', [
+                    'dataProvider' => $dataProvider,
+                    'searchModel' => $searchModel
+                ]);
+            }else {
+                Yii::$app->getSession()->setFlash('danger', 'You do not require the permission to access this page.');
+
+                return $this->goHome();
+            }
+        }else{
             Yii::$app->getSession()->setFlash('danger', 'You do not require the permission to access this page.');
-
-            return $this->goHome();
         }
     }
 
     public function actionUserlist()
     {
-        if(Yii::$app->user->identity->position === 'admin'){
-            $dataProvider = new ActiveDataProvider([
-                'query' => User::find()
-            ]);
+        if(!Yii::$app->user->isGuest){
+            if(Yii::$app->user->identity->position === 'admin'){
+                $dataProvider = new ActiveDataProvider([
+                    'query' => User::find()
+                ]);
 
-            return $this->render('userlist', ['dataProvider' => $dataProvider]);
-        }else {
+                return $this->render('userlist', ['dataProvider' => $dataProvider]);
+            }else {
+                Yii::$app->getSession()->setFlash('danger', 'You do not require the permission to access this page.');
+
+                return $this->goHome();
+            }
+        }else{
             Yii::$app->getSession()->setFlash('danger', 'You do not require the permission to access this page.');
-
-            return $this->goHome();
         }
     }
 
     public function actionViewtransactionlist()
     {
-        if(Yii::$app->user->identity->position === 'admin'){
-            $searchModel = new TransactionSearchForm();
-            $dataProvider = $searchModel->transactionSearch(Yii::$app->request->queryParams);
+        if(!Yii::$app->user->isGuest){
+            if(Yii::$app->user->identity->position === 'admin'){
+                $searchModel = new TransactionSearchForm();
+                $dataProvider = $searchModel->transactionSearch(Yii::$app->request->queryParams);
 
-            return $this->render('viewtransactionlist', [
-                'dataProvider' => $dataProvider,
-                'searchModel' => $searchModel
-            ]);
-        }else {
+                return $this->render('viewtransactionlist', [
+                    'dataProvider' => $dataProvider,
+                    'searchModel' => $searchModel
+                ]);
+            }else {
+                Yii::$app->getSession()->setFlash('danger', 'You do not require the permission to access this page.');
+
+                return $this->goHome();
+            }
+        }else{
             Yii::$app->getSession()->setFlash('danger', 'You do not require the permission to access this page.');
-
-            return $this->goHome();
         }
     }
 }
