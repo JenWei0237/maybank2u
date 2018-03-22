@@ -47,9 +47,14 @@ class LoginForm extends Model
         if (!$this->hasErrors()) {
             $user = $this->getUser();
 
+            if($user->activation === 'Deactivate') {
+                $this->addError($attribute, 'Your account has not been activated yet.');   
+            } 
+
             if (!$user || !$user->validatePassword($this->password)) {
                 $this->addError($attribute, 'Incorrect username or password.');
             }
+
         }
     }
 

@@ -63,11 +63,12 @@ class UserController extends \yii\web\Controller
 
     public function actionIndex()
     {
-        return $this->render('index');
+            return $this->render('index');
     }
 
     public function actionLogin()
     {
+        $user = User::find();
     	if (!Yii::$app->user->isGuest) {
             return $this->goHome();
         }
@@ -90,18 +91,18 @@ class UserController extends \yii\web\Controller
         return $this->goHome();
     }
 
-    public function actionContact()
-    {
-        $model = new ContactForm();
-        if ($model->load(Yii::$app->request->post()) && $model->contact(Yii::$app->params['adminEmail'])) {
-            Yii::$app->session->setFlash('contactFormSubmitted');
+    // public function actionContact()
+    // {
+    //     $model = new ContactForm();
+    //     if ($model->load(Yii::$app->request->post()) && $model->contact(Yii::$app->params['adminEmail'])) {
+    //         Yii::$app->session->setFlash('contactFormSubmitted');
 
-            return $this->refresh();
-        }
-        return $this->render('contact', [
-            'model' => $model,
-        ]);
-    }
+    //         return $this->refresh();
+    //     }
+    //     return $this->render('contact', [
+    //         'model' => $model,
+    //     ]);
+    // }
 
     public function actionSignup()
     {
@@ -132,66 +133,74 @@ class UserController extends \yii\web\Controller
         return $this->render('signup', ['model' => $model]);
     }
 
-    public function actionCreateaccount()
-    {
-        $model = new CreateaccountForm;
+    // public function actionCreateaccount()
+    // {
+    //     $model = new CreateaccountForm;
 
-        if($model->load(Yii::$app->request->post())){
-            $model->createAccount();
-            Yii::$app->getSession()->setFlash('success', 'Create account successfully.');
+    //     if($model->load(Yii::$app->request->post())){
+    //         $model->createAccount();
+    //         Yii::$app->getSession()->setFlash('success', 'Create account successfully.');
 
-            return $this->redirect('createaccount');
-        }
-        return $this->render('createaccount', ['model' => $model]);
-    }
+    //         return $this->redirect('createaccount');
+    //     }
+    //     return $this->render('createaccount', ['model' => $model]);
+    // }
 
     public function actionTransfer()
     {
-        $client = new Client();
-        $db = Yii::$app->db->beginTransaction();
-        $user = User::findOne(Yii::$app->user->identity->id);
-        $model = new TransferForm();
-        $account = Account::find()->where(['user_id' => Yii::$app->user->identity->id])->all();
-        $listData = ArrayHelper::map($account, 'account_number', 'account_number');
-        // $model->getAccountnumber();
+        if(!Yii::$app->user->isGuest){
+            $client = new Client();
+            $db = Yii::$app->db->beginTransaction();
+            $user = User::findOne(Yii::$app->user->identity->id);
+            $model = new TransferForm();
+            $account = Account::find()->where(['user_id' => Yii::$app->user->identity->id])->all();
+            $listData = ArrayHelper::map($account, 'account_number', 'account_number');
+            // $model->getAccountnumber();
 
-        if($model->load(Yii::$app->request->post())){
-            try{
-                $model->transferAccount();
-                Yii::$app->getSession()->setFlash('success', 'Amount transfered successfully.');
+            if($model->load(Yii::$app->request->post())){
+                try{
+                    $model->transferAccount();
+                    Yii::$app->getSession()->setFlash('success', 'Amount transfered successfully.');
 
-                $db->commit();
+                    $db->commit();
 
-                //SMS Function
-                $response = $client->createRequest()
-                            ->setMethod('GET')
-                            ->setUrl('https://platform.clickatell.com/messages/http/send')
-                            ->setData(['apiKey' => '1g4tmCw5SBejQ3JSf0b_7w==', 'to' => '60176049207', 'content' => 'A transaction has been made. Thank you for using our service.'])
-                            ->send();
+                    //SMS Function
+                    $response = $client->createRequest()
+                                ->setMethod('GET')
+                                ->setUrl('https://platform.clickatell.com/messages/http/send')
+                                ->setData(['apiKey' => '1g4tmCw5SBejQ3JSf0b_7w==', 'to' => '60176049207', 'content' => 'A transaction has been made. Thank you for using our service.'])
+                                ->send();
 
-                //Email Function
-                // Yii::$app->mailer->compose('transactionemail')
-                //     ->setFrom('assignment1200@gmail.com')
-                //     ->setTo($user->email)
-                //     ->setSubject('TRANSACTION')
-                //     ->send();
-                return $this->redirect('transfer');
+                    //Email Function
+                    // Yii::$app->mailer->compose('transactionemail')
+                    //     ->setFrom('assignment1200@gmail.com')
+                    //     ->setTo($user->email)
+                    //     ->setSubject('TRANSACTION')
+                    //     ->send();
+                    return $this->redirect('transfer');
 
-            }catch(\Exception $e){
-                $db->rollback();
-                
-                Yii::$app->getSession()->setFlash('danger', $e->getMessage());
+                }catch(\Exception $e){
+                    $db->rollback();
+                    
+                    Yii::$app->getSession()->setFlash('danger', $e->getMessage());
+                }
             }
+            return $this->render('transfer', ['model' => $model, 'listData' => $listData]);
+        }else{
+            Yii::$app->getSession()->setFlash('danger', 'You do not require the permission to access this page.');
         }
-        return $this->render('transfer', ['model' => $model, 'listData' => $listData]);
     }
 
     public function actionViewaccount()
     {
-        $id = Yii::$app->user->identity->id;
-        $dataProvider = Account::findOne($id);
+        if(!Yii::$app->user->isGuest){
+            $id = Yii::$app->user->identity->id;
+            $dataProvider = Account::findOne($id);
 
-        return $this->render('viewaccount', ['dataProvider' => $dataProvider]);
+            return $this->render('viewaccount', ['dataProvider' => $dataProvider]);
+        }else{
+            Yii::$app->getSession()->setFlash('danger', 'You do not require the permission to access this page.');
+        }
     }
 
     public function findModel($id)
@@ -204,10 +213,14 @@ class UserController extends \yii\web\Controller
 
     public function actionTransactionhistory()
     {
-        $id = Yii::$app->user->identity->id;
-        $dataProvider = Transaction::findOne($id);
+        if(!Yii::$app->user->isGuest){
+            $id = Yii::$app->user->identity->id;
+            $dataProvider = Transaction::findOne($id);
 
-        return $this->render('transactionhistory', ['dataProvider' => $dataProvider]);
+            return $this->render('transactionhistory', ['dataProvider' => $dataProvider]);
+        }else{
+            Yii::$app->getSession()->setFlash('danger', 'You do not require the permission to access this page.');
+        }
     }
 
     public function actionTestmail()
@@ -255,34 +268,42 @@ class UserController extends \yii\web\Controller
 
     public function actionUserprofile()
     {
-        $model = User::findOne(Yii::$app->user->identity->id);
+        if(!Yii::$app->user->isGuest){
+            $model = User::findOne(Yii::$app->user->identity->id);
 
-        return $this->render('userprofile', ['model' => $model]);
+            return $this->render('userprofile', ['model' => $model]);
+        }else{
+            Yii::$app->getSession()->setFlash('danger', 'You do not require the permission to access this page.');
+        }
     }
 
     public function actionUpdateprofile($id)
     {
-        $db = Yii::$app->db->beginTransaction();
-        $model = User::findOne($id);
+        if(!Yii::$app->user->isGuest){
+            $db = Yii::$app->db->beginTransaction();
+            $model = User::findOne($id);
 
-        if($model->load(Yii::$app->request->post())){
-            try
-            {
-                if(!$model->save()){
-                    throw new Exception(current($model->getFirstErrors()));
-                }  
-                Yii::$app->getSession()->setFlash('success', 'Profile updated Successfully.');
+            if($model->load(Yii::$app->request->post())){
+                try
+                {
+                    if(!$model->save()){
+                        throw new Exception(current($model->getFirstErrors()));
+                    }  
+                    Yii::$app->getSession()->setFlash('success', 'Profile updated Successfully.');
 
-                $db->commit();
-                return $this->redirect('userprofile');
+                    $db->commit();
+                    return $this->redirect('userprofile');
 
-            }catch(\Exception $e){
-                $db->rollback();
-                echo $e->getMessage();    
+                }catch(\Exception $e){
+                    $db->rollback();
+                    echo $e->getMessage();    
+                }
+
             }
-
+            return $this->render('updateprofile', ['model' => $model]);
+        }else{
+            Yii::$app->getSession()->setFlash('danger', 'You do not require the permission to access this page.');
         }
-        return $this->render('updateprofile', ['model' => $model]);
     }
 
     public function actionForgetpassword()
@@ -375,23 +396,28 @@ class UserController extends \yii\web\Controller
 
     public function actionChangepassword()
     {
-        $model = new SignupForm();
-        $db = Yii::$app->db->beginTransaction();
+        if(!Yii::$app->user->isGuest){
+            $model = new SignupForm();
+            $db = Yii::$app->db->beginTransaction();
 
-        if($model->load(Yii::$app->request->post())){
-            try{
-                $model->changePassword();
-                $db->commit();
+            if($model->load(Yii::$app->request->post())){
+                try{
+                    $model->changePassword();
+                    $db->commit();
 
-                Yii::$app->getSession()->setFlash('success', 'New password has been changed.');
-                return $this->redirect('changepassword');
-            }catch(\Exception $e){
-                $db->rollback();
-                Yii::$app->getSession()->setFlash('danger', $e->getMessage());
+                    Yii::$app->getSession()->setFlash('success', 'New password has been changed.');
+                    return $this->redirect('changepassword');
+                }catch(\Exception $e){
+                    $db->rollback();
+                    Yii::$app->getSession()->setFlash('danger', $e->getMessage());
+                }
             }
-        }
 
-        return $this->render('changepassword', ['model' => $model]);
+            return $this->render('changepassword', ['model' => $model]);
+
+        }else{
+            Yii::$app->getSession()->setFlash('danger', 'You do not require the permission to access this page.');
+        }
     }
 
     public function actionViewaccountlist()
